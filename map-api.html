@@ -209,7 +209,8 @@ API Course, Lesson 1 -->
 
     function alertArea() {
       var squareMeters = google.maps.geometry.spherical.computeArea(polygon.getPath());
-      alert(squareMeters.toFixed(2) + ' square meters');
+      var squareTaiwan = squareMeters * 0.3025;
+      alert(squareMeters.toFixed(2) + ' square meters\n' + squareTaiwan.toFixed(2) + ' 坪');
     };
 
     function toggleDrawing(drawingManager) {
