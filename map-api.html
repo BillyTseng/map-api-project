@@ -5,12 +5,20 @@ API Course, Lesson 1 -->
  <!-- styles put here, but you can include a CSS file and reference it instead! -->
    <style type="text/css">
      html, body { height: 100%; margin: 0; padding: 0; }
-     #map { height: 100%; }
+     #map {
+       bottom:0px;
+       height: 100%;
+       left: 100px;
+       position: absolute;
+       right: 0px;
+     }
    </style>
  </head>
  <body>
+   <input id="toggle-drawing"  type="button" value="Drawing Tools">
    <div id="map"></div>
    <script type="text/javascript">
+     var polygon = null;
      // Create a map variable
      var map;
      // Function to initialize the map within the map div
@@ -129,7 +137,7 @@ API Course, Lesson 1 -->
         center: {lat: 40.74135, lng: -73.99802},
         zoom: 14,
         styles: styles,
-        mapTyoeControl: false
+        mapTypeControl: false
      });
      // Create a single latLng literal object.
      var singleLatLng = {lat: 40.74135, lng: -73.99802};
@@ -149,7 +157,17 @@ API Course, Lesson 1 -->
      var infoWindow = new google.maps.InfoWindow({
        content: marker.getPosition().toString()
      });
-
+     // Initialize the drawing manager.
+     var drawingManager = new google.maps.drawing.DrawingManager({
+       drawingMode: google.maps.drawing.OverlayType.POLYGON,
+       drawingControl: true,
+       drawingControlOptions: {
+         position: google.maps.ControlPosition.TOP_LEFT,
+         drawingModes: [
+           google.maps.drawing.OverlayType.POLYGON
+         ]
+       }
+     });
      //Style the marker.
      var defaultIcon = makeMarkerIcon('0091ff');
      var highlightedIcon = makeMarkerIcon('FFFF24');
@@ -165,6 +183,45 @@ API Course, Lesson 1 -->
      marker.addListener('mouseout', function() {
        this.setIcon(defaultIcon);
      });
+
+     document.getElementById('toggle-drawing').addEventListener('click', function() {
+       toggleDrawing(drawingManager);
+     });
+
+     drawingManager.addListener('overlaycomplete', function(event) {
+       // First, check if there is an existing polygon.
+       // If there is, get rid of it and remove the markers
+       if (polygon) {
+         polygon.setMap(null);
+       }
+       // Switching the drawing mode to the HAND (i.e., no longer drawing).
+       drawingManager.setDrawingMode(null);
+       // Creating a new editable polygon from the overlay.
+       polygon = event.overlay;
+       polygon.setEditable(true);
+
+       alertArea();
+       // Make sure the search is re-done if the poly is changed.
+       polygon.getPath().addListener('set_at', alertArea);
+       polygon.getPath().addListener('insert_at', alertArea);
+     });
+    }
+
+    function alertArea() {
+      var squareMeters = google.maps.geometry.spherical.computeArea(polygon.getPath());
+      alert(squareMeters.toFixed(2) + ' square meters');
+    };
+
+    function toggleDrawing(drawingManager) {
+      if (drawingManager.map) {
+        drawingManager.setMap(null);
+        // In case the user drew anything, get rid of the polygon
+        if (polygon !== null) {
+          polygon.setMap(null);
+        }
+      } else {
+        drawingManager.setMap(map);
+      }
     }
 
     function makeMarkerIcon(markerColor) {
@@ -178,7 +235,7 @@ API Course, Lesson 1 -->
    </script>
    <!--TODO: Insert your API Key in the below call to load the API.-->
    <script async defer
-     src="https://maps.googleapis.com/maps/api/js?v=3&key=XXX&callback=initMap">
+     src="https://maps.googleapis.com/maps/api/js?libraries=geometry,drawing&key=XXX&v=3&callback=initMap">
    </script>
  </body>
 </html>
